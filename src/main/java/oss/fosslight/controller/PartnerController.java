@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021 LG Electronics Inc.
- * SPDX-License-Identifier: AGPL-3.0-only 
+ * SPDX-License-Identifier: AGPL-3.0-only
  */
 
 package oss.fosslight.controller;
@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import com.google.gson.reflect.TypeToken;
@@ -129,7 +130,7 @@ public class PartnerController extends CoTopComponent{
 				searchBean = new PartnerMaster();
 			} else if(getSessionObject(SESSION_KEY_SEARCH) != null) {
 				searchBean = (PartnerMaster) getSessionObject(SESSION_KEY_SEARCH);
-			}	
+			}
 		}
 		
 		model.addAttribute("searchBean", searchBean);
@@ -316,7 +317,7 @@ public class PartnerController extends CoTopComponent{
 		List<T2Users> result = null;
 		
 		try{
-			result = partnerService.getUserList(t2Users);	
+			result = partnerService.getUserList(t2Users);
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -340,7 +341,7 @@ public class PartnerController extends CoTopComponent{
 		
 		try {
 			History h = partnerService.work(vo);
-			h.sethAction(CoConstDef.ACTION_CODE_UPDATE);				
+			h.sethAction(CoConstDef.ACTION_CODE_UPDATE);
 			historyService.storeData(h);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
@@ -383,21 +384,21 @@ public class PartnerController extends CoTopComponent{
 		Map<String, Object> retMap = new HashMap<String, Object>();
 		Map<String, Object> ruleMap = T2CoValidationConfig.getInstance().getRuleAllMap();
 		String msg = "";
-	        
+		
 		if(result.size() > 0){
-
+			
 			if(!isEmpty(partnerMaster.getPartnerName()) && partnerMaster.getPartnerName().equals(result.get(0).getPartnerName())){
 				msg = (String) ruleMap.get("PARTNER_NAME.DUPLICATED.MSG");
 				dupMap.put("partnerName", msg);
 			}
-
-	        
+			
+			
 			retMap.put("isValid", "false");
 			retMap.put("resCd", "99"); // overlap flag
 			retMap.put("dupData", dupMap);
 			return makeJsonResponseHeader(retMap);
 		}
-				
+		
 		String mainGrid = partnerMaster.getOssComponentsStr();
 		
 		Type collectionType = new TypeToken<List<ProjectIdentification>>() {}.getType();
@@ -420,7 +421,7 @@ public class PartnerController extends CoTopComponent{
 		// main grid
 		pv.setAppendix("mainList", ossComponents);
 		
-		T2CoValidationResult vr = pv.validateObject(partnerMaster); 
+		T2CoValidationResult vr = pv.validateObject(partnerMaster);
 		
 		// return validator result
 		if(!vr.isValid()) {
@@ -552,7 +553,7 @@ public class PartnerController extends CoTopComponent{
 		try{
 			History h = partnerService.work(partnerMaster);
 			partnerService.deletePartnerMaster(partnerMaster);
-			h.sethAction(CoConstDef.ACTION_CODE_DELETE);	
+			h.sethAction(CoConstDef.ACTION_CODE_DELETE);
 			historyService.storeData(h);
 			
 			resCd="10";
@@ -573,7 +574,7 @@ public class PartnerController extends CoTopComponent{
 				log.error(e.getMessage(), e);
 			}
 		}
-
+		
 		resMap.put("resCd", resCd);
 		
 		return makeJsonResponseHeader(resMap);
@@ -604,7 +605,7 @@ public class PartnerController extends CoTopComponent{
 	
 	@PostMapping(value = PARTNER.ADD_WATCHER)
 	public @ResponseBody ResponseEntity<Object> addWatcher(@RequestBody PartnerMaster project,
-			HttpServletRequest req, HttpServletResponse res, Model model) {
+														   HttpServletRequest req, HttpServletResponse res, Model model) {
 		
 		Map<String, Object> resultMap = new HashMap<String, Object>();
 		
@@ -627,11 +628,11 @@ public class PartnerController extends CoTopComponent{
 				
 				String email = (String) userInfo.get("EMAIL");
 				project.setParEmail(email);
-
+				
 				// 사용자가 입력한 domain과 ldap search를 통해 확인된 domain이 다를 수 있기때문에 ldap search에서 확인된 domain을 우선적으로 처리함.
 				resultMap.put("email", email);
 			}
-						
+			
 			if(!isEmpty(project.getParUserId()) || !isEmpty(project.getParEmail())) {
 				partnerService.addWatcher(project);
 				resultMap.put("isValid", "true");
@@ -647,7 +648,7 @@ public class PartnerController extends CoTopComponent{
 	
 	@PostMapping(value = PARTNER.REMOVE_WATCHER)
 	public @ResponseBody ResponseEntity<Object> removeWatcher(@RequestBody PartnerMaster project,
-			HttpServletRequest req, HttpServletResponse res, Model model) {
+															  HttpServletRequest req, HttpServletResponse res, Model model) {
 		try {
 			if(!isEmpty(project.getParUserId()) || !isEmpty(project.getParEmail())) {
 				partnerService.removeWatcher(project);
@@ -672,15 +673,15 @@ public class PartnerController extends CoTopComponent{
 	 */
 	@PostMapping(value = PARTNER.COPY_WATCHER)
 	public @ResponseBody ResponseEntity<Object> copyWatcher(@RequestBody PartnerMaster project,
-			HttpServletRequest req, HttpServletResponse res, Model model) {
-			HashMap<String, Object> resMap = new HashMap<>();
-		try {			
+															HttpServletRequest req, HttpServletResponse res, Model model) {
+		HashMap<String, Object> resMap = new HashMap<>();
+		try {
 			if(!isEmpty(project.getListKind()) && !isEmpty(project.getListId()) ) {
 				
 				List<PartnerMaster> result = partnerService.copyWatcher(project);
 				
 				if(result != null) {
-
+					
 					for(PartnerMaster pm : result) {
 						if(!StringUtils.isEmpty(pm.getDivision())) {
 							pm.setParDivision(pm.getDivision());
@@ -722,7 +723,7 @@ public class PartnerController extends CoTopComponent{
 	 */
 	@PostMapping(value = PARTNER.UPDATE_PUBLIC_YN)
 	public @ResponseBody ResponseEntity<Object> updatePublicYn(@RequestBody PartnerMaster partner,
-			HttpServletRequest req, HttpServletResponse res, Model model) {
+															   HttpServletRequest req, HttpServletResponse res, Model model) {
 		try {
 			partnerService.updatePublicYn(partner);
 		} catch (Exception e) {
@@ -763,7 +764,7 @@ public class PartnerController extends CoTopComponent{
 			
 			T2CoProjectValidator pv = new T2CoProjectValidator();
 			pv.setProcType(pv.PROC_TYPE_IDENTIFICATION_PARTNER);
-
+			
 			// main grid
 			pv.setAppendix("mainList", (List<ProjectIdentification>) map.get("mainData"));
 			// sub grid
@@ -899,34 +900,66 @@ public class PartnerController extends CoTopComponent{
 		List<UploadFile> list = new ArrayList<UploadFile>();
 		ArrayList<Object> resultList = new ArrayList<Object>();
 		
+		Map<String, MultipartFile> fileMap = req.getFileMap();
+		String fileExtension = StringUtils.getFilenameExtension(fileMap.get("myfile").getOriginalFilename());
+		
 		if (req.getContentType() != null && req.getContentType().toLowerCase().indexOf("multipart/form-data") > -1 ) {
 			file.setCreator(loginUserName());
 			list = fileService.uploadFile(req, file);
 			
-			resultList = CommonFunction.checkXlsxFileLimit(list);
+			if(fileExtension.equals("csv")) {
+				resultList = CommonFunction.checkCsvFileLimit(list);
+			} else {
+				resultList = CommonFunction.checkXlsxFileLimit(list);
+			}
 			
 			if(resultList.size() > 0) {
 				return toJson(resultList);
 			}
 		}
 		
-		// sheet name
-		List<Object> sheetNameList = null;
-		
-		try {
-			if(CoConstDef.FLAG_YES.equals(excel)){
-				if(list != null && !list.isEmpty() && CoCodeManager.getCodeExpString(CoConstDef.CD_FILE_ACCEPT, "22").contains(list.get(0).getFileExt())) {
-					sheetNameList = ExcelUtil.getSheetNames(list, RESOURCE_PUBLIC_UPLOAD_EXCEL_PATH_PREFIX);
+		if(fileExtension.equals("csv")) {
+			resultList.add(list);
+			resultList.add("SRC");
+			resultList.add("CSV_FILE");
+			
+			return toJson(resultList);
+		} else {
+			// sheet name
+			List<Object> sheetNameList = null;
+			
+			try {
+				if(CoConstDef.FLAG_YES.equals(excel)){
+					if(list != null && !list.isEmpty() && CoCodeManager.getCodeExpString(CoConstDef.CD_FILE_ACCEPT, "22").contains(list.get(0).getFileExt())) {
+						
+						sheetNameList = ExcelUtil.getSheetNames(list, RESOURCE_PUBLIC_UPLOAD_EXCEL_PATH_PREFIX);
+					}
 				}
-			}	
-		} catch(Exception e) {
-			log.error(e.getMessage(), e);
+			} catch(Exception e) {
+				log.error(e.getMessage(), e);
+			}
+			
+			Boolean isSpdxSpreadsheet = false;
+			for(Object sheet : sheetNameList) {
+				String sheetName = sheet.toString();
+				if(sheetName.contains("Package Info") || sheetName.contains("Per File Info")) {
+					isSpdxSpreadsheet = true;
+				}
+			}
+			
+			if(isSpdxSpreadsheet){
+				resultList.add(list);
+				resultList.add(sheetNameList);
+				resultList.add("SPDX_SPREADSHEET_FILE");
+			}
+			else {
+				resultList.add(list);
+				resultList.add(sheetNameList);
+				resultList.add("EXCEL_FILE");
+			}
+			
+			return toJson(resultList);
 		}
-		
-		resultList.add(list);
-		resultList.add(sheetNameList);
-		
-		return toJson(resultList);
 	}
 	
 	/**
@@ -943,7 +976,7 @@ public class PartnerController extends CoTopComponent{
 	@ResponseBody
 	@PostMapping(value = PARTNER.DOCUMENT_FILE)
 	public String documentsFile(T2File file, MultipartHttpServletRequest req, HttpServletRequest request,
-			HttpServletResponse res, Model model) throws Exception {
+								HttpServletResponse res, Model model) throws Exception {
 		// file registration
 		List<UploadFile> list = new ArrayList<UploadFile>();
 		String fileId = req.getParameter("registFileId");
@@ -962,7 +995,7 @@ public class PartnerController extends CoTopComponent{
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
+		
 		// 결과값 resultList에 담기
 		// Put the result value in resultList
 		return toJson(list);
@@ -1028,7 +1061,7 @@ public class PartnerController extends CoTopComponent{
 		
 		try{
 			//validation check
-			 vResult = validate(req);	
+			vResult = validate(req);
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -1065,7 +1098,7 @@ public class PartnerController extends CoTopComponent{
 		List<CommentsHistory> result = null;
 		
 		try{
-			 result = commentService.getCommentList(commentsHistory);	
+			result = commentService.getCommentList(commentsHistory);
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -1089,7 +1122,7 @@ public class PartnerController extends CoTopComponent{
 			HttpServletResponse res, Model model) throws Exception{
 		String fileName = req.getParameter("fileName");
 		String logiPath = req.getParameter("logiPath");
-				
+		
 		return excelToResponseEntity(RESOURCE_PUBLIC_EXCEL_TEMPLATE_PATH_PREFIX + logiPath, fileName);
 	}
 	
